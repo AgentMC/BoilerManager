@@ -1,0 +1,65 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Boiler manager";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Boiler monitor</h1>
+    <p id="loader">Лоадинг...</p>
+</div>
+
+<center>
+    <div class="d-inline-block responsive">
+      <canvas id="myChart"></canvas>
+    </div>
+
+    <div class="d-inline-block align-top m-4">
+        <div id="top" class="cylinder">&nbsp;</div>
+        <div id="bottom" class="cylinder">&nbsp;</div>
+        <div class="text-lg-start">Бойлер нагрет на: <span id="boilerPercent">0</span>%<br/>
+             Воды хватит на: <span id="boilerTime">0</span> минут.</div>
+    </div>
+</center>
+
+<p>todo: chart by fetch; setTimeout; overall design; post support; deploy.</p>
+
+<script language="javascript">
+    const heightCylinder = 200, stepPx = 4;
+    update(heightCylinder, stepPx);
+</script>
+
+
+<script>
+  const labels = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+  ];
+
+  const data = {
+    labels: labels,
+    datasets: [{
+      label: 'My First dataset',
+      backgroundColor: 'rgb(255, 99, 132)',
+      borderColor: 'rgb(255, 99, 132)',
+      data: [0, 10, 5, 2, 20, 30],
+    },{
+      label: 'My Second dataset',
+      backgroundColor: 'rgb(99, 255, 132)',
+      borderColor: 'rgb(132, 255, 99)',
+      data: [20, 30, 35, 4, 50, 10],
+    }]
+  };
+
+  const config = {
+    type: 'line',
+    data: data,
+    options: {}
+  };
+
+const myChart = new Chart($('#myChart'), config);
+</script>
