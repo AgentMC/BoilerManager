@@ -24,7 +24,7 @@ function dateToLocal(date) {
 }
 var globalChart;
 function update(gHeightPx, gStepPx) {
-    fetch("/api/BoilerData")
+    fetch("./api/BoilerData")
         .then(response => {
             var statusPromise;
             if (response.ok) {
