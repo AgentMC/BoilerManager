@@ -2,29 +2,34 @@
 {
     public class BoilerMeta
     {
-        const double FullWarm = 45.0, DefCold = 25;
+        const double FullWarm = 45.0, DefCold = 25, TimeToCool = 45;
 
         public double BoilerWarm { get; private set; }
         public double BoilerTime { get; private set; }
         public DateTime LastNotified { get; private set; }
 
-        public Dictionary<DateTime, double[]> Readings { get; init; }
+        public Dictionary<DateTime, double[]> Readings { get; init; } = new();
 
-        public BoilerMeta(Dictionary<DateTime, double[]> readings)
+        public void Add(double[] values)
         {
-            Readings = readings;
-            Update();
+            if (values.Length != 3) throw new Exception("Wrong count of Entries");
+            var timestamp = DateTime.UtcNow;
+            Readings.Add(timestamp, values);
+
+            UpdateStats(timestamp, values);
+            
+            if(Readings.Count > 10080)
+            {
+                var oldestEntry = Readings.Keys.Min();
+                Readings.Remove(oldestEntry);
+            }
         }
 
-        public void Update()
+        private void UpdateStats(DateTime timestamp, double[] values)
         {
-            LastNotified = Readings.Keys.Max();
-
-            var lastEntry = Readings[LastNotified];
-            if (lastEntry.Length != 3) throw new Exception("Wrong count of Entries");
-            BoilerWarm = (ClampPercent(lastEntry[0]) + ClampPercent(lastEntry[1]) + ClampPercent(lastEntry[2])) / 3;
-            BoilerTime = BoilerWarm * 45;
-
+            LastNotified = timestamp;
+            BoilerWarm = (ClampPercent(values[0]) + ClampPercent(values[1]) + ClampPercent(values[2])) / 3;
+            BoilerTime = BoilerWarm * TimeToCool;
         }
 
         private static double ClampPercent(double value)
@@ -33,9 +38,25 @@
             return (normalized - DefCold) / (FullWarm - DefCold);
         }
 
+        public static readonly BoilerMeta Default = new();
 
-        public static readonly BoilerMeta Default = new(
-            new Dictionary<DateTime, double[]>()
+
+
+
+
+
+        //----------------------------
+
+
+
+
+
+        private static readonly Random _rnd = new();
+        private static readonly Thread _pureChaos = GetThread();
+
+        private static Thread GetThread()
+        {
+            foreach (var x in new Dictionary<DateTime, double[]>()
             {
                 {DateTime.UtcNow.AddMinutes(-9), new double[]{20,20,20 } },
                 {DateTime.UtcNow.AddMinutes(-8), new double[]{25,20,20 } },
@@ -47,21 +68,32 @@
                 {DateTime.UtcNow.AddMinutes(-2), new double[]{50,35,25 } },
                 {DateTime.UtcNow.AddMinutes(-1), new double[]{50,40,25 } },
                 {DateTime.UtcNow.AddMinutes(-0), new double[]{50,40,30 } },
-            });
+            })
+            {
+                Default.Readings.Add(x.Key, x.Value);
+            }
 
-        private static readonly Random _rnd = new();
-        private static readonly Thread _pureChaos = GetThread();
+            var timestamp = Default.Readings.Keys.Max();
+            var lastEntry = Default.Readings[timestamp];
+            Default.UpdateStats(timestamp, lastEntry);
 
-        private static Thread GetThread()
-        {
             var t = new Thread(delegate ()
             {
+                var lastValues = Default.Readings[Default.Readings.Keys.Max()];
+                var upDown = 2;
                 while (true)
                 {
                     Thread.Sleep(3000);
-                    var lastValues = Default.Readings[Default.Readings.Keys.Max()];
-                    Default.Readings.Add(DateTime.UtcNow, new double[] { lastValues[0] + _rnd.NextDouble() * 3 - 2, lastValues[1] + _rnd.NextDouble() * 3 - 2, lastValues[2] + _rnd.NextDouble() * 3 - 2 });
-                    Default.Update();
+
+                    var newValues = new double[] { lastValues[0] + _rnd.NextDouble() * 3 - upDown, lastValues[1] + _rnd.NextDouble() * 3 - upDown, lastValues[2] + _rnd.NextDouble() * 3 - upDown };
+                    Default.Add(newValues);
+                    
+                    var total = newValues.Sum();
+                    if((total < 60 && upDown >0) ||(total > 165 && upDown <0))
+                    {
+                        upDown *= -1;
+                    }
+                    lastValues = newValues;
                 }
             })
             { IsBackground = true };

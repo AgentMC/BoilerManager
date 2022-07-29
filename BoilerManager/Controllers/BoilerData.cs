@@ -23,22 +23,21 @@ namespace BoilerManager.Controllers
             return "value";
         }
 
+        private readonly string[] DeviceIDs = new[] { "ID1", "ID2", "ID3" };
+
         // POST api/<BoilerData>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public void Post([FromBody] Dictionary<string, double> value)
         {
-        }
-
-        // PUT api/<BoilerData>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<BoilerData>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            if (value.Count != 3) return;
+            var doubles = new double[value.Count];
+            for (int i = 0; i < value.Count; i++)
+            {
+                double? d = value.TryGetValue(DeviceIDs[i], out double x) ? x : null;
+                if (d == null) return;
+                doubles[i] = d.Value;
+            }
+            BoilerMeta.Default.Add(doubles);
         }
     }
 }
