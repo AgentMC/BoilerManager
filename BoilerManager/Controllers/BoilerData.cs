@@ -16,22 +16,16 @@ namespace BoilerManager.Controllers
             return BoilerMeta.Default;
         }
 
-        // GET api/<BoilerData>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
         private readonly string[] DeviceIDs = new[] { "ID1", "ID2", "ID3" };
 
         // POST api/<BoilerData>
         [HttpPost]
         public void Post([FromBody] Dictionary<string, double> value)
         {
-            if (value.Count != 3) return;
-            var doubles = new double[value.Count];
-            for (int i = 0; i < value.Count; i++)
+            const int ExpectedCount = 3;
+            if (value.Count != ExpectedCount) return;
+            var doubles = new double[ExpectedCount];
+            for (int i = 0; i < ExpectedCount; i++)
             {
                 double? d = value.TryGetValue(DeviceIDs[i], out double x) ? x : null;
                 if (d == null) return;

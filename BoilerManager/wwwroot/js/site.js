@@ -45,12 +45,12 @@ function update(gHeightPx, gStepPx) {
                             }, {
                                 label: 'Mid reading',
                                 backgroundColor: 'rgb(99, 255, 132)',
-                                borderColor: 'rgb(132, 255, 99)',
+                                borderColor: 'rgb(99, 255, 132)',
                                 data: [],
                             }, {
                                 label: 'Bottom reading',
                                 backgroundColor: 'rgb(132, 99, 255)',
-                                borderColor: 'rgb(99, 255, 132)',
+                                borderColor: 'rgb(132, 99, 255)',
                                 data: [],
                             }]
                         };
@@ -65,7 +65,7 @@ function update(gHeightPx, gStepPx) {
                         globalChart = new Chart($('#myChart'), { type: 'line', data: data, options: { animation:false } });
 
                         //---------------
-                        setTimeout(() => update(gHeightPx, gStepPx), 1000);
+                        setTimeout(() => update(gHeightPx, gStepPx), 5000);
                         //---------------
                         return Promise.resolve(`Обновлено: клиент: ${dateToLocal()}, сервер: ${dateToLocal(json.lastNotified)}`);
                     });
