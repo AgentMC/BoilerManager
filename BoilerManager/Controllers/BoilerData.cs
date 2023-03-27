@@ -11,12 +11,12 @@ namespace BoilerManager.Controllers
     {
         // GET: api/<BoilerData>
         [HttpGet, ResponseCache(Duration = 10)]
-        public BoilerMeta Get()
+        public BoilerMetaResponse Get([FromQuery] int length = -1)
         {
-            return BoilerMeta.Default;
+            return BoilerMeta.Default.ToResponse(length);
         }
 
-        private readonly string[] DeviceIDs = new[] { "ID1", "ID2", "ID3" };
+        private readonly string[] DeviceIDs = new[] { "28DC331A0E0000BA", "2872BB1A0E000000", "287E281A0E000084" };
 
         // POST api/<BoilerData>
         [HttpPost]

@@ -9,6 +9,24 @@
     <p id="loader">Лоадинг...</p>
 </div>
 
+<script language="javascript">
+    const heightCylinder = 200, stepPx = 4;
+    function ScopeChanged(e) {
+        document.scopeLength = Number.parseInt(e.value);
+        if (document.currentTimeout != -1) clearTimeout(document.currentTimeout);
+        update(heightCylinder, stepPx, document.scopeLength);
+    }
+</script>
+<div id="controls">
+    <label for="scope">Display scope</label>
+    <select id="scope" onchange="ScopeChanged(this)" >
+        <option id="Hour" label="Hour" value="60"/>
+        <option id="Twelve" label="12 hours" value="720" />
+        <option id="Day" label="Day" value="1440" />
+        <option id="ThreeD" label="3 days" value="4320" />
+        <option id="Week" label="Week" value="@BoilerManager.Model.BoilerMeta.MAX_ENTRIES" />
+    </select>
+</div>
 <center>
     <div class="d-inline-block responsive">
         <canvas id="myChart"></canvas>
@@ -27,6 +45,5 @@
 <p>todo: overall design, tune the limits.</p>
 
 <script language="javascript">
-    const heightCylinder = 200, stepPx = 4;
-    update(heightCylinder, stepPx);
+    ScopeChanged(document.getElementById("scope"));
 </script>

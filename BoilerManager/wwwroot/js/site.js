@@ -23,8 +23,9 @@ function dateToLocal(date) {
     return d.toLocaleString();
 }
 var globalChart;
-function update(gHeightPx, gStepPx) {
-    fetch("./api/BoilerData")
+function update(gHeightPx, gStepPx, scopeLength) {
+    document.currentTimeout = -1;
+    fetch(`./api/BoilerData?length=${scopeLength}`)
         .then(response => {
             var statusPromise;
             if (response.ok) {
@@ -65,7 +66,7 @@ function update(gHeightPx, gStepPx) {
                         globalChart = new Chart($('#myChart'), { type: 'line', data: data, options: { animation:false } });
 
                         //---------------
-                        setTimeout(() => update(gHeightPx, gStepPx), 5000);
+                        document.currentTimeout = setTimeout(() => update(gHeightPx, gStepPx, document.scopeLength), 5000);
                         //---------------
                         return Promise.resolve(`Обновлено: клиент: ${dateToLocal()}, сервер: ${dateToLocal(json.lastNotified)}`);
                     });

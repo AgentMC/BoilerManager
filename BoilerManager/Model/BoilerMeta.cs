@@ -1,28 +1,24 @@
 ﻿namespace BoilerManager.Model
 {
-    public class BoilerMeta
+    public class BoilerMeta : BoilerMetaBase
     {
         const double FullWarm = 45.0, DefCold = 25, TimeToCool = 45;
+        public const int MAX_ENTRIES = 7*24*60;
 
-        public double BoilerWarm { get; private set; }
-        public double BoilerTime { get; private set; }
-        public DateTime LastNotified { get; private set; }
-
-        public Dictionary<DateTime, double[]> Readings { get; init; } = new();
+        private readonly List<(DateTime timestamp, double[] values)> Readings = new();
 
         public void Add(double[] values)
         {
             if (values.Length != 3) throw new Exception("Wrong count of Entries");
             var timestamp = DateTime.UtcNow;
-            Readings.Add(timestamp, values);
+
+            Readings.Add((timestamp, values));
+            if(Readings.Count > MAX_ENTRIES)
+            {
+                Readings.RemoveAt(0);
+            }
 
             UpdateStats(timestamp, values);
-            
-            if(Readings.Count > 10080)
-            {
-                var oldestEntry = Readings.Keys.Min();
-                Readings.Remove(oldestEntry);
-            }
         }
 
         private void UpdateStats(DateTime timestamp, double[] values)
@@ -36,6 +32,18 @@
         {
             var normalized = Math.Max(Math.Min(value, FullWarm), DefCold);
             return (normalized - DefCold) / (FullWarm - DefCold);
+        }
+
+        public BoilerMetaResponse ToResponse(int count = -1)
+        {
+            var r = new BoilerMetaResponse(LastNotified, BoilerWarm, BoilerTime);
+            if (count == -1) count = Readings.Count;
+            for (int i = Math.Max(Math.Max(Readings.Count - count, 0), Readings.Count - 1); i > 0 && i < Readings.Count; i++)
+            {
+                var (timestamp, values) = Readings[i];
+                r.Readings[timestamp] = values;
+            }
+            return r;
         }
 
         public static readonly BoilerMeta Default = new();
