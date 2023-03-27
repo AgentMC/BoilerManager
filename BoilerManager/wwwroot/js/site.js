@@ -68,12 +68,12 @@ function update(gHeightPx, gStepPx, scopeLength) {
                         //---------------
                         document.currentTimeout = setTimeout(() => update(gHeightPx, gStepPx, document.scopeLength), 5000);
                         //---------------
-                        return Promise.resolve(`Обновлено: клиент: ${dateToLocal()}, сервер: ${dateToLocal(json.lastNotified)}`);
+                        return Promise.resolve(`Refreshed: client: ${dateToLocal()}, server: ${dateToLocal(json.lastNotified)}`);
                     });
             } else {
                 statusPromise = response.text()
                     .then(text => {
-                        return Promise.resolve(`Обновлено: клиент: ${dateToLocal()}, ошибка HTTP ${response.status} ${response.statusText}: [${text}]`);
+                        return Promise.resolve(`Refreshed: client: ${dateToLocal()}, HTTP error ${response.status} ${response.statusText}: [${text}]`);
                     });
             }
             return statusPromise;
