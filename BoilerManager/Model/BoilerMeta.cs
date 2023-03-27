@@ -6,19 +6,24 @@
         public const int MAX_ENTRIES = 7*24*60;
 
         private readonly List<(DateTime timestamp, double[] values)> Readings = new();
+        private readonly ReaderWriterLockSlim block = new();
 
         public void Add(double[] values)
         {
             if (values.Length != 3) throw new Exception("Wrong count of Entries");
             var timestamp = DateTime.UtcNow;
 
-            Readings.Add((timestamp, values));
-            if(Readings.Count > MAX_ENTRIES)
+            block.EnterWriteLock();
             {
-                Readings.RemoveAt(0);
-            }
+                Readings.Add((timestamp, values));
+                if (Readings.Count > MAX_ENTRIES)
+                {
+                    Readings.RemoveAt(0);
+                }
 
-            UpdateStats(timestamp, values);
+                UpdateStats(timestamp, values);
+            }
+            block.ExitWriteLock();
         }
 
         private void UpdateStats(DateTime timestamp, double[] values)
@@ -36,13 +41,18 @@
 
         public BoilerMetaResponse ToResponse(int count = -1)
         {
-            var r = new BoilerMetaResponse(LastNotified, BoilerWarm, BoilerTime);
-            if (count == -1) count = Readings.Count;
-            for (int i = Math.Max(Math.Max(Readings.Count - count, 0), Readings.Count - 1); i > 0 && i < Readings.Count; i++)
+            BoilerMetaResponse r;
+            block.EnterReadLock();
             {
-                var (timestamp, values) = Readings[i];
-                r.Readings[timestamp] = values;
+                r = new BoilerMetaResponse(LastNotified, BoilerWarm, BoilerTime);
+                if (count == -1) count = Readings.Count;
+                for (int i = Math.Max(Math.Max(Readings.Count - count, 0), Readings.Count - 1); i > 0 && i < Readings.Count; i++)
+                {
+                    var (timestamp, values) = Readings[i];
+                    r.Readings[timestamp] = values;
+                }
             }
+            block.ExitReadLock();
             return r;
         }
 
