@@ -22,6 +22,13 @@ function dateToLocal(date) {
     var d = date ? new Date(date) : new Date();
     return d.toLocaleString();
 }
+function getChartAr() {
+    var w = document.body.clientWidth;
+    if (w > 450) return 2;
+    if (w > 380) return 1.5;
+    if (w > 280) return 1;
+    return 0.75;
+}
 var globalChart;
 function update(gHeightPx, gStepPx, scopeLength) {
     document.currentTimeout = -1;
@@ -63,20 +70,26 @@ function update(gHeightPx, gStepPx, scopeLength) {
                             }
                         }
                         if (globalChart) globalChart.destroy();
-                        globalChart = new Chart($('#myChart'), { type: 'line', data: data, options: { animation:false } });
+                        globalChart = new Chart($('#myChart'), { type: 'line', data: data, options: { animation: false, aspectRatio: getChartAr() } });
 
                         //---------------
                         document.currentTimeout = setTimeout(() => update(gHeightPx, gStepPx, document.scopeLength), 5000);
                         //---------------
-                        return Promise.resolve(`Refreshed: client: ${dateToLocal()}, server: ${dateToLocal(json.lastNotified)}`);
+
+                        var dateDiff = (new Date() - Date.parse(json.lastNotified)) / 1000;
+                        return Promise.resolve({ Text: `Refreshed: client: ${dateToLocal()}, server: ${dateToLocal(json.lastNotified)}`, Color: (dateDiff > 70 ? "#ffff00" : "#ffffff") });
                     });
             } else {
                 statusPromise = response.text()
                     .then(text => {
-                        return Promise.resolve(`Refreshed: client: ${dateToLocal()}, HTTP error ${response.status} ${response.statusText}: [${text}]`);
+                        return Promise.resolve({ Text: `Refreshed: client: ${dateToLocal()}, HTTP error ${response.status} ${response.statusText}: [${text}]`, Color:"#ff0000" });
                     });
             }
             return statusPromise;
         })
-        .then(s => $('#loader')[0].innerText = s);
+        .then(s => {
+            var ldr = $('#loader')[0];
+            ldr.innerText = s.Text;
+            ldr.style.backgroundColor = s.Color;
+        });
 }
