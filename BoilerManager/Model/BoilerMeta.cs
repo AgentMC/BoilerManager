@@ -3,7 +3,9 @@
     public class BoilerMeta : BoilerMetaBase
     {
         public const int MAX_ENTRIES = 7*24*60;
-        const double FullWarm = 45.0, DefCold = 25, TimeToCool = 45;
+        const double    FullWarm = 55.0,//[°C] Maximum temperatuure the boiler can be heated
+                        DefCold = 20,   //[°C] Ambient temperature it gets cooled to 
+                        TimeToCool = 30;//[Minutes] When heated to the maximum, how long can you shower?
 
         private static readonly string PersistanceFile = Path.Combine(Environment.ExpandEnvironmentVariables("%TEMP%"), "BoilerManagerCache.dat");
 
