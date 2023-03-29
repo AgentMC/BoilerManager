@@ -10,6 +10,7 @@
         private readonly List<(DateTime timestamp, double[] values)> Readings = new();
         private readonly ReaderWriterLockSlim block = new();
         private readonly AutoResetEvent goWrite = new(false);
+        private readonly Thread persisterThread;
         
         public BoilerMeta() 
         {
@@ -34,8 +35,8 @@
                 }
             }
 
-            var persister = new Thread(PersisterThread) { IsBackground = true, Name = nameof(PersisterThread), CurrentCulture = c };
-            persister.Start();
+            persisterThread = new Thread(PersisterThread) { IsBackground = true, Name = nameof(PersisterThread), CurrentCulture = c };
+            persisterThread.Start();
         }
 
         public void Add(double[] values)
