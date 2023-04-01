@@ -3,9 +3,10 @@
     public class BoilerMeta : BoilerMetaBase
     {
         public const int MAX_ENTRIES = 7*24*60;
-        const double    FullWarm = 55.0,//[°C] Maximum temperatuure the boiler can be heated
-                        DefCold = 20,   //[°C] Ambient temperature it gets cooled to 
-                        TimeToCool = 30;//[Minutes] When heated to the maximum, how long can you shower?
+        const double    FullWarm = 50.0,//[°C] Maximum temperature the boiler can be heated as a whole
+                      //DefCold = 20,   //[°C] Ambient temperature it gets cooled to 
+                        WashCold = 34,  //[°C] Lowest temperature of comfort showering
+                        TimeToCool = 25;//[Minutes] When heated to the maximum, how long can you shower?
 
         private static readonly string PersistanceFile = Path.Combine(Environment.ExpandEnvironmentVariables("%TEMP%"), "BoilerManagerCache.dat");
 
@@ -69,8 +70,8 @@
 
         private static double ClampPercent(double value)
         {
-            var normalized = Math.Max(Math.Min(value, FullWarm), DefCold);
-            return (normalized - DefCold) / (FullWarm - DefCold);
+            var normalized = Math.Max(Math.Min(value, FullWarm), WashCold);
+            return (normalized - WashCold) / (FullWarm - WashCold);
         }
 
         public BoilerMetaResponse ToResponse(int count = -1)
