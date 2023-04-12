@@ -18,6 +18,7 @@
 #include <map>
 
 #include "one_wire.h"
+#include "hardware/structs/scb.h"
 
 #define TLS_CLIENT_TIMEOUT_SECS 15
 #define TLS_CLIENT_PORT 443
@@ -327,22 +328,6 @@ TLS_CLIENT_T *sendPacketIteration(altcp_tls_config *tls_config)
     return state;
 }
 
-void run_tls_client_test()
-{
-    /* No CA certificate checking */
-    auto tls_config = altcp_tls_create_config_client(NULL, 0);
-
-    while (true)
-    {
-        auto s = sendPacketIteration(tls_config);
-        if (s)
-            free(s);
-        sleep_ms(5000);
-    }
-
-    altcp_tls_free_config(tls_config);
-}
-
 bool oneWireIteration(One_wire *sensor)
 {
     printf("Searching...\r\n");
@@ -367,19 +352,6 @@ bool oneWireIteration(One_wire *sensor)
         readings[addr64] = temp;
     }
     return true;
-}
-
-void run_onewire_test()
-{
-    printf("Init OneWire...\r\n");
-    One_wire one_wire(ONEWIRE_GPIO_PIN);
-    one_wire.init();
-    sleep_ms(100);
-    while (true)
-    {
-        oneWireIteration(&one_wire);
-        sleep_ms(5000);
-    }
 }
 
 void primaryCycle()
@@ -428,23 +400,10 @@ void primaryCycle()
             printf("Iteration: error during sensor polling.\r\n");
         }
     skip:
-        sleep_us(4000000 + (1000000 - (time_us_32() % 1000000)));
+        sleep_us(5000000 - (time_us_32() % 1000000));
     }
 
     altcp_tls_free_config(tls_config);
-}
-
-void test_led()
-{
-    colors_t colors[] = {Off, Red, Green, Yellow, Blue, Magenta, White};
-    while (1)
-    {
-        for (auto &&c : colors)
-        {
-            setLedColor(c);
-            sleep_ms(5000);
-        }
-    }
 }
 
 int main()
@@ -459,9 +418,12 @@ int main()
     gpio_set_dir(PinBlue1, true);
     gpio_set_dir(PinBlue2, true);
     gpio_set_dir(PinGreen, true);
-    // test_led();
 
     setLedColor(White);
+
+    // Low-power mode with only RTC as interrupt
+    auto save = scb_hw->scr;
+    scb_hw->scr = save | M0PLUS_SCR_SLEEPDEEP_BITS;
 
     if (cyw43_arch_init())
     {
@@ -470,17 +432,16 @@ int main()
     }
     pulse(2);
 
-    // run_onewire_test();
-
     cyw43_arch_enable_sta_mode();
     if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000))
     {
         printf("failed to connect\n");
         return 1;
     }
+    // aggressive-low power state
+    cyw43_wifi_pm(&cyw43_state, CYW43_AGGRESSIVE_PM);
     pulse(3);
 
-    // run_tls_client_test();
     primaryCycle();
 
     /* sleep a bit to let usb stdio write out any buffer to host */
