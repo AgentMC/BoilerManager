@@ -1,4 +1,6 @@
-﻿function generateBoxShadow(maxHeight, step, threshold) {
+﻿const MAX_UPDATE_INTERVAL = 80;
+
+function generateBoxShadow(maxHeight, step, threshold) {
     var r = '';
     var thPx = threshold * maxHeight;
     for (var i = 0; i <= maxHeight; i += step) {
@@ -77,7 +79,7 @@ function update(gHeightPx, gStepPx, scopeLength) {
                         //---------------
 
                         var dateDiff = (new Date() - Date.parse(json.lastNotified)) / 1000;
-                        return Promise.resolve({ Text: `Refreshed: client: ${dateToLocal()}, server: ${dateToLocal(json.lastNotified)}`, Color: (dateDiff > 70 ? "#ffff00" : "#ffffff") });
+                        return Promise.resolve({ Text: `Refreshed: client: ${dateToLocal()}, server: ${dateToLocal(json.lastNotified)}`, Color: (dateDiff > MAX_UPDATE_INTERVAL ? "#ffff00" : "#ffffff") });
                     });
             } else {
                 statusPromise = response.text()
