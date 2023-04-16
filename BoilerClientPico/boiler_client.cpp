@@ -129,7 +129,7 @@ static void sys_set_low_power()
     printf("Power: deepsleep set!\n");
 
     // Underclock CPU
-    set_sys_clock_khz(64000, true);
+    set_sys_clock_khz(68000, true);
     printf("Power: CPU underclocked!\n");
 
     // Undervolt CPU
