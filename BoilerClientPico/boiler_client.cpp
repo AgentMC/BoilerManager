@@ -7,9 +7,9 @@
  */
 
 #ifndef NDEBUG
-#  define D(x) x
+#define D(x) x
 #else
-#  define D(x) 
+#define D(x)
 #endif
 
 #include <string.h>
@@ -27,6 +27,7 @@
 
 #include "hardware/structs/scb.h"
 #include "hardware/vreg.h"
+#include "hardware/watchdog.h"
 
 #define TLS_CLIENT_TIMEOUT_SECS 15
 #define TLS_CLIENT_PORT 443
@@ -141,6 +142,11 @@ static void sys_set_low_power()
     printf("Power: WiFi aggressive power management set!\n");
 }
 
+static void reboot()
+{
+    watchdog_reboot(0, 0, 1000);
+}
+
 #pragma endregion
 
 #pragma region TLS Client
@@ -152,7 +158,7 @@ typedef struct TLS_CLIENT_T_
     bool webSuccess; // Response stream has been received from server
     int httpStatus;  // HTTP status returned in the response
     int stage;
-    /*1 - Failed to created altcp connection
+    /*1 - Failed to create altcp connection
     **2 - DNS resolution error
     **3 - Failed to connect to server or connection was immediately reset
     **4 - Failed to send data to server
@@ -419,6 +425,7 @@ void primaryCycle()
     led_set_color(Off);
 
     int cycles = 1;
+    int consecutiveErrors = 0;
     while (true)
     {
         if (--cycles > 0)
@@ -434,10 +441,17 @@ void primaryCycle()
                 {
                     led_pulse(1, 1000, true, Green);
                     cycles = 12;
+                    consecutiveErrors = 0;
                 }
                 else
                 {
                     led_pulse(state->stage, 200, true, Red);
+                    if (++consecutiveErrors >= 5)
+                    {
+                        cyw43_arch_deinit();
+                        reboot();
+                        goto skip; // drop to __wfe() until watchdog's cycle clicks.
+                    }
                 }
                 free(state);
             }
@@ -468,7 +482,8 @@ int main()
 
     if (!wifi_init_and_connect())
     {
-        led_set_color(Magenta);
+        led_pulse(1, 2000, true, Magenta);
+        reboot();
         return 1;
     }
     led_pulse(3);
