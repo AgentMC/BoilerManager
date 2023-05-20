@@ -10,6 +10,7 @@
         private static readonly string PersistanceFile = Path.Combine(Environment.ExpandEnvironmentVariables("%TEMP%"), "BoilerManagerCache.dat");
 
         private readonly List<(DateTime timestamp, double[] values)> Readings = new();
+        private readonly double[] last3 = new double[] { 0, 0, 0 };
         private readonly ReaderWriterLockSlim block = new();
         private readonly AutoResetEvent goWrite = new(false);
         private readonly Thread persisterThread;
@@ -31,7 +32,7 @@
                         entry = reader.ReadLine()?.Split('|');
                         if(entry?.Length == 4)
                         {
-                            Readings.Add((DateTime.Parse(entry[0]), new[] { double.Parse(entry[1], c), double.Parse(entry[2], c), double.Parse(entry[3], c) }));
+                            AddReading(DateTime.Parse(entry[0]), new[] { double.Parse(entry[1], c), double.Parse(entry[2], c), double.Parse(entry[3], c) });
                         }
                     }
                 }
@@ -41,6 +42,19 @@
             persisterThread.Start();
         }
 
+        private void AddReading(DateTime key, double[] values)
+        {
+            Readings.Add((key, values));
+            if (Readings.Count > MAX_ENTRIES)
+            {
+                Readings.RemoveAt(0);
+            }
+
+            last3[0] = last3[1];
+            last3[1] = last3[2];
+            last3[2] = values[0] + values[1] + values[2];
+        }
+
         public void Add(double[] values)
         {
             if (values.Length != 3) throw new Exception("Wrong count of Entries");
@@ -48,12 +62,7 @@
 
             block.EnterWriteLock();
             {
-                Readings.Add((timestamp, values));
-                if (Readings.Count > MAX_ENTRIES)
-                {
-                    Readings.RemoveAt(0);
-                }
-
+                AddReading(timestamp, values);
                 UpdateStats(timestamp, values);
             }
             block.ExitWriteLock();
@@ -80,11 +89,12 @@
             {
                 r = new BoilerMetaResponse(LastNotified, BoilerWarm, BoilerTime);
                 if (count < 0 || count > Readings.Count) count = Readings.Count;
-                for (int i = Readings.Count - count; i >= 0 && i < Readings.Count; i++)
+                for (int i = Readings.Count - count; i < Readings.Count; i++)
                 {
                     var (timestamp, values) = Readings[i];
                     r.Readings[timestamp] = values;
                 }
+                r.IsHeating = last3[0] < last3[1] && last3[1] < last3[2];
             }
             block.ExitReadLock();
             return r;

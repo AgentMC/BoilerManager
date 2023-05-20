@@ -10,5 +10,6 @@
         }
 
         public Dictionary<DateTime, double[]> Readings { get; init; } = new();
+        public bool IsHeating { get; set; }
     }
 }

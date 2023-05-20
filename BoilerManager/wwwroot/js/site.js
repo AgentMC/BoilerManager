@@ -1,4 +1,5 @@
 ﻿const MAX_UPDATE_INTERVAL = 80;
+const NOTIFICATION_THRESHOLD = 0.05;
 
 function generateBoxShadow(maxHeight, step, threshold) {
     var r = '';
@@ -16,9 +17,14 @@ function drawCylinder(heightCylinder, stepPx, cylinderWarm) {
     $('#top')[0].style.boxShadow = x;
     $('#bottom')[0].style.marginTop = heightCylinder - 100 + 'px';
 }
-function setMetrics(cylinderWarm, cylinderTime) {
-    $('#boilerPercent')[0].innerText = (cylinderWarm * 100).toFixed(2);
-    $('#boilerTime')[0].innerText = (cylinderTime).toFixed(0);
+function setMetrics(json) {
+    var formatted = {
+        percent: (json.boilerWarm * 100).toFixed(2),
+        time: (json.boilerTime).toFixed(0)
+    };
+    $('#boilerPercent')[0].innerText = formatted.percent;
+    $('#boilerTime')[0].innerText = formatted.time;
+    return formatted;
 }
 function dateToLocal(date) {
     var d = date ? new Date(date) : new Date();
@@ -31,6 +37,11 @@ function getChartAr() {
     if (w > 280) return 1;
     return 0.75;
 }
+function notificationsEnabled() { return Notification.permission == 'granted'; }
+function closeAndReset(percent) {
+    if (document.currentNotification) document.currentNotification.close();
+    document.currentTopPercent = percent;
+}
 var globalChart;
 function update(gHeightPx, gStepPx, scopeLength) {
     document.currentTimeout = -1;
@@ -40,11 +51,10 @@ function update(gHeightPx, gStepPx, scopeLength) {
             if (response.ok) {
                 statusPromise = response.json()
                     .then(json => {
-                        var cylinderWarm = json.boilerWarm;
-                        var cylinderTime = json.boilerTime;
-                        drawCylinder(gHeightPx, gStepPx, cylinderWarm);
-                        setMetrics(cylinderWarm, cylinderTime);
-                        //---------------
+                        //--------------- Draw boiler
+                        drawCylinder(gHeightPx, gStepPx, json.boilerWarm);
+                        var formattedMetrics = setMetrics(json);
+                        //--------------- Draw chart
                         var data = {
                             labels: [],
                             datasets: [{
@@ -73,11 +83,20 @@ function update(gHeightPx, gStepPx, scopeLength) {
                         }
                         if (globalChart) globalChart.destroy();
                         globalChart = new Chart($('#myChart'), { type: 'line', data: data, options: { animation: false, aspectRatio: getChartAr() } });
-
-                        //---------------
-                        document.currentTimeout = setTimeout(() => update(gHeightPx, gStepPx, document.scopeLength), 5000);
-                        //---------------
-
+                        //--------------- Schedule update
+                        document.currentTimeout = setTimeout(() => update(gHeightPx, gStepPx, document.scopeLength), 10000);
+                        //--------------- Notify if necessary and enabled
+                        if (notificationsEnabled()) {
+                            if (!json.isHeating) {
+                                //if changed negatively - close and reset top
+                                closeAndReset(json.boilerWarm);
+                            } else if (json.boilerWarm - (document.currentTopPercent ?? 0) >= NOTIFICATION_THRESHOLD) {
+                                //if changed positively over threshold - close, set top and notify anew
+                                closeAndReset(json.boilerWarm);
+                                document.currentNotification = new Notification(`Boiler is heating! Now at ${formattedMetrics.percent}%, ${formattedMetrics.time} min available.`, { tag: 'BM01' });
+                            }
+                        }
+                        //--------------- Indicate possible battery down
                         var dateDiff = (new Date() - Date.parse(json.lastNotified)) / 1000;
                         return Promise.resolve({ Text: `Refreshed: client: ${dateToLocal()}, server: ${dateToLocal(json.lastNotified)}`, Color: (dateDiff > MAX_UPDATE_INTERVAL ? "#ffff00" : "#ffffff") });
                     });

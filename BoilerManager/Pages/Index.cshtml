@@ -27,6 +27,10 @@
         <option id="ThreeD" label="3 days" value="4320" />
         <option id="Week" label="Week" value="@BoilerManager.Model.BoilerMeta.MAX_ENTRIES" />
     </select>
+    |
+    <label>Notifications:</label>
+    <button id="Notif_true" onclick="Notification.requestPermission();">Enable</button>
+    <span id="Notif_false">enabled.</span>
 </div>
 <center>
     <div class="d-inline-block responsive">
@@ -44,5 +48,7 @@
 </center>
 
 <script language="javascript">
+    var suffix = notificationsEnabled().toString();
+    document.getElementById(`Notif_${suffix}`).style.display = 'none';
     ScopeChanged(document.getElementById("scope"));
 </script>
