@@ -60,6 +60,14 @@ enum colors_t
     Builtin = -1
 };
 
+void led_set_color(colors_t i)
+{
+    gpio_put(PinRed, i & 0b0001);
+    gpio_put(PinGreen, i & 0b0010);
+    gpio_put(PinBlue1, i & 0b0100);
+    gpio_put(PinBlue2, i & 0b1000);
+}
+
 static void led_init()
 {
     gpio_init(PinRed);
@@ -70,14 +78,7 @@ static void led_init()
     gpio_set_dir(PinBlue1, true);
     gpio_set_dir(PinBlue2, true);
     gpio_set_dir(PinGreen, true);
-}
-
-void led_set_color(colors_t i)
-{
-    gpio_put(PinRed, i & 0b0001);
-    gpio_put(PinGreen, i & 0b0010);
-    gpio_put(PinBlue1, i & 0b0100);
-    gpio_put(PinBlue2, i & 0b1000);
+    led_set_color(Off);
 }
 
 static void led_pulse(int count = 1, int delayMs = 250, bool dropLastDelay = false, colors_t color = Builtin)
