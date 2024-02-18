@@ -1,5 +1,10 @@
 ﻿const MAX_UPDATE_INTERVAL = 80;
 const NOTIFICATION_THRESHOLD = 0.05;
+const state = {
+    OK: "#ffffff",
+    WARNING: "#ffff00",
+    ERROR: "#ff0000"
+}
 
 function generateBoxShadow(maxHeight, step, threshold) {
     var r = '';
@@ -98,19 +103,31 @@ function update(gHeightPx, gStepPx, scopeLength) {
                         }
                         //--------------- Indicate possible battery down
                         var dateDiff = (new Date() - Date.parse(json.lastNotified)) / 1000;
-                        return Promise.resolve({ Text: `Refreshed: client: ${dateToLocal()}, server: ${dateToLocal(json.lastNotified)}`, Color: (dateDiff > MAX_UPDATE_INTERVAL ? "#ffff00" : "#ffffff") });
+                        return Promise.resolve({ Message: `server: ${dateToLocal(json.lastNotified)}`, State: (dateDiff > MAX_UPDATE_INTERVAL ? state.WARNING : state.OK) });
                     });
             } else {
                 statusPromise = response.text()
                     .then(text => {
-                        return Promise.resolve({ Text: `Refreshed: client: ${dateToLocal()}, HTTP error ${response.status} ${response.statusText}: [${text}]`, Color:"#ff0000" });
+                        return Promise.resolve({ Message: `HTTP error ${response.status} ${response.statusText}: [${text}]`, State: state.ERROR });
                     });
             }
             return statusPromise;
         })
         .then(s => {
             var ldr = $('#loader')[0];
-            ldr.innerText = s.Text;
-            ldr.style.backgroundColor = s.Color;
+            ldr.innerText = `Refreshed: client: ${dateToLocal()}, ${s.Message}.`;
+            ldr.style.backgroundColor = s.State;
+            var visual = $('#visuals')[0];
+            if (s.State == state.OK) {
+                ldr.style.fontSize = 'inherit';
+                ldr.style.fontWeight = 'inherit';
+                ldr.style.border = 'none';
+                visual.style.opacity = 'inherit';
+            } else {
+                ldr.style.fontSize = 'x-large';
+                ldr.style.fontWeight = 'bold';
+                ldr.style.border = '1px solid red';
+                visual.style.opacity = '50%';
+            }
         });
 }
