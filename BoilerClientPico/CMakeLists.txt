@@ -10,6 +10,7 @@ target_include_directories(boiler_client_background PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/.. # for our common lwipopts
         )
+#dependencies
 target_link_libraries(boiler_client_background
         pico_cyw43_arch_lwip_threadsafe_background
         pico_lwip_mbedtls
@@ -17,6 +18,10 @@ target_link_libraries(boiler_client_background
         pico_stdlib
         pico_one_wire
         )
+# enable usb output, disable uart output
+pico_enable_stdio_usb(boiler_client_background 1)
+pico_enable_stdio_uart(boiler_client_background 0)
+# create map/bin/hex/uf2 file etc.
 pico_add_extra_outputs(boiler_client_background)
 
 # Ignore warnings from lwip code
