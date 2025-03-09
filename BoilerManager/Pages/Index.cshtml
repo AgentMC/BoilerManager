@@ -21,10 +21,10 @@
     <label for="scope">Display scope</label>
     <select id="scope" onchange="ScopeChanged(this)" >
         <option id="Hour" label="Hour" value="60"/>
-        <option id="FourH" label="4 hours" value="240" />
-        <option id="TwelveH" label="12 hours" value="720" />
-        <option id="Day" label="Day" value="1440" />
-        <option id="ThreeD" label="3 days" value="4320" />
+        <option id="FourH" label="4 hours" value="@(60*4)" />
+        <option id="TwelveH" label="12 hours" value="@(60*12)" />
+        <option id="Day" label="Day" value="@(60*24)" />
+        <option id="ThreeD" label="3 days" value="@(60*24*3)" />
         <option id="Week" label="Week" value="@BoilerManager.Model.BoilerMeta.MAX_ENTRIES" />
     </select>
     |

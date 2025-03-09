@@ -2,10 +2,12 @@
 {
     public class BoilerMeta : BoilerMetaBase
     {
-        public const int MAX_ENTRIES = 7*24*60;
-        const double    FullWarm = 50.0,//[°C] Maximum temperature the boiler can be heated as a whole
-                        WashCold = 33,  //[°C] Lowest temperature of comfort showering
-                        TimeToCool = 27;//[Minutes] When heated to the maximum, how long can you shower?
+        public const int                 MAX_ENTRIES = 7*24*60,    //[Number] The max length of in-memory/file history
+                                         TimeToCool = 27;          //[Minutes] When heated to the maximum, how long can you shower?
+        private static readonly double[] FullWarm = { 48, 48, 36 },//[°C] Maximum temperature the boiler can be heated, per sensor
+                                         WashCold = { 34, 28, 24 },//[°C] Lowest temperature of comfort showering, per sensor
+                                         Mul = { 0.15, 0.6, 0.25 };//[Number] Importance factor of every sensor when calculating the data
+                        
 
         private static readonly string PersistanceFile = Path.Combine(Environment.ExpandEnvironmentVariables("%TEMP%"), "BoilerManagerCache.dat");
 
@@ -72,14 +74,13 @@
         private void UpdateStats(DateTime timestamp, double[] values)
         {
             LastNotified = timestamp;
-            BoilerWarm = (ClampPercent(values[0]) + ClampPercent(values[1]) + ClampPercent(values[2])) / 3;
+            BoilerWarm = 0;
+            for (int i = 0; i < values.Length; i++) 
+            {
+                var normalized = Math.Max(Math.Min(values[i], FullWarm[i]), WashCold[i]);
+                BoilerWarm += (normalized - WashCold[i]) / (FullWarm[i] - WashCold[i]) * Mul[i];
+            }
             BoilerTime = BoilerWarm * TimeToCool;
-        }
-
-        private static double ClampPercent(double value)
-        {
-            var normalized = Math.Max(Math.Min(value, FullWarm), WashCold);
-            return (normalized - WashCold) / (FullWarm - WashCold);
         }
 
         public BoilerMetaResponse ToResponse(int count = -1)
