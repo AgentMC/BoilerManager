@@ -9,7 +9,7 @@ It's not utilizing any DB so for persistance layer uses just a text file.
 
 # About the client code
 
-The code in this repo is designed to work with the SDK 1.5, with a copy of the "TLS Client" example. 
+The client code in this repo is designed to work with the SDK 1.5, with a copy of the "TLS Client" example. 
 
 As of 2.0, with the current 2.2, RPi significantly changed the SDK architecture.
 
